@@ -31,7 +31,9 @@
 #define MAX_NUM_IRQS 14
 #define NUM_IRQ_REGS 2
 
-#define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 300
+/* TestCode to fix the headset irq cannot trigger after the phone asleep */
+/* TIMEOUT change from 300ms to 500ms */
+#define WCD9XXX_SYSTEM_RESUME_TIMEOUT_MS 500
 
 #define BYTE_BIT_MASK(nr) (1UL << ((nr) % BITS_PER_BYTE))
 #define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
@@ -349,6 +351,10 @@ bool wcd9xxx_spmi_lock_sleep()
 		pr_debug("%s: holding wake lock\n", __func__);
 		pm_qos_update_request(&map.pm_qos_req,
 				      msm_cpuidle_get_deep_idle_latency());
+/* TestCode to fix the headset irq cannot trigger after the phone asleep */
+#ifdef CONFIG_HUAWEI_KERNEL
+		pm_stay_awake(&map.spmi[0]->dev);
+#endif
 	}
 	mutex_unlock(&map.pm_lock);
 	pr_debug("%s: wake lock counter %d\n", __func__,
@@ -391,6 +397,10 @@ void wcd9xxx_spmi_unlock_sleep()
 			map.pm_state = WCD9XXX_PM_SLEEPABLE;
 		pm_qos_update_request(&map.pm_qos_req,
 				PM_QOS_DEFAULT_VALUE);
+/* TestCode to fix the headset irq cannot trigger after the phone asleep */
+#ifdef CONFIG_HUAWEI_KERNEL
+		pm_relax(&map.spmi[0]->dev);
+#endif
 	}
 	mutex_unlock(&map.pm_lock);
 	pr_debug("%s: wake lock counter %d\n", __func__,
